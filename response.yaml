@@ -1,0 +1,110 @@
+---
+default-prefix: dl!
+database-path: "./database/data.db"
+presence: "dl!help"
+methods:
+
+  remind:
+    message: "How was your day, <@{user_id}>?"
+
+  help:
+    structure: "<Name of method, default = None>"
+    description: "List all command of the bot that you can use"
+    #content to output when use dl!help
+    content: |
+      `dl!add <a note> <attach a picture>` to add an entry to your diary!
+      `dl!addAnyway <a note> <attach a picture>` to add an entry to your diary when you don't want to wait!
+      `dl!addText <a note>` to add an entry with no picture.
+      `dl!addTextAnyway <a note>` to skip the 1-day cooldown and add a note with no picture
+      `dl!read` to see all of your picture!
+      `dl!viewAnnouncement` to see the newest announcement.
+
+      `dl!help <name of the command>` to get specific help about that command.
+
+      You can turn reminding function on or off using `dl!remindOn` or `dl!remindOff`
+
+      If there is no arrow to navigate through your entries, you can manually add :arrow_left: and :arrow_right: to move through entries or check the bot permission to add emoji.
+      Need further help? Join the support server at: https://discord.gg/XR5nPnRbUk
+
+  
+  #fail template for the rest of add methods
+  add-fail: &fail
+    upload-fail: "Upload failed, please try again later or with a different picture."
+    time-fail: "Please wait for another {hour} hours {min} mins!!\nYou can skip the wait time with `{prefix}addAnyway`"
+    no-picture: "Please attach a picture, you can add only text using `{prefix}addText` or `{prefix}addTextAnyway`"
+    no-text: "Please add some text!"
+
+  add:
+    structure: "[a note], [a picture]"
+    description: "Add a daily entry with a picture to your diary with a cooldown of 24 hours"
+    response-success: "Your current streak is {streak_length} days"
+    response-fail: *fail
+
+  addanyway:
+    structure: "[a note], [a picture]"
+    description: "Skip 24-hour cool down and add another entry to your diary"
+    response-success: "Your current streak is still {streak_length} days"
+    response-fail: *fail
+      
+
+  addtext:
+    structure: "[a note]"
+    description: "Add a daily entry without a picture to your diary with a 24-hour cooldown"
+    response-success: "Your current streak is {streak_length} days!"
+    response-fail:
+      upload-fail: "Upload failed, please try again later or with a different picture."
+      time-fail: "Please wait for another {hour} hours {min} mins!!\nYou can skip the wait time with `{prefix}addTextAnyway`"
+      no-picture: "Please attach a picture, you can add only text using `{prefix}addText`"
+      no-text: "Please add some text!"
+    
+
+  addtextanyway:
+    structure: "[a note]"
+    description: "Skip 24-hour cool down and add another entry with no picture to your diary"
+    response-success: "Your current streak is {streak_length} days!"
+    response-fail:
+      upload-fail: "Upload failed, please try again later or with a different picture."
+      time-fail: "Please wait for another {hour} hours {min} mins!!\nYou can skip the wait time with `{prefix}addAnyway`"
+      no-picture: "Please attach a picture, you can add only text using `{prefix}addText`"
+      no-text: "Please add some text!"
+
+  read:
+    structure: ""
+    description: "Read all your entries in your diary"
+    response-fail:
+      no-entry: "No entry found, please add a new entry using `dl!add`. Use `dl!help` to learn more."
+
+  viewannouncement:
+    structure: ""
+    description: "View the newest announcement of the bot"
+    
+  remindoff:
+    structure: ""
+    description: "Turn off the reminding function"
+    response-success: "Reminder is off! You can turn it back on using `{prefix}remindOn`"
+    response-fail: "An error has occured, please try again later or contant the bots' owner"
+  
+  remindon:
+    structure: ""
+    description: "Turn on the reminding function"
+    response-success: "Reminder is on! You can turn it back on using `{prefix}remindOff`"
+    response-fail: "An error has occured, please try again later or contant the bots' owner"
+
+  viewannouncement:
+    structure: ""
+    description: "View latest announcement related to the bot"
+    response-fail: "There is no new announcement"
+  
+  feedback:
+    structure: "[The content of your feedback]"
+    description: "Send an anonymous feedback to the bot developer."
+
+  adminhelp:
+    content: |
+      `dl!announce <life time> <announce content>`
+      `dl!clearAnnounce`: clear current announcement
+      `dl!setHelp`: set help content
+      `setLogChannel`: set log channel for discord wide log
+      `logOff`
+      `logOn`
+      `serverCount`
