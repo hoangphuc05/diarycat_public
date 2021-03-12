@@ -1,6 +1,7 @@
 
 import discord
 from discord import embeds
+from discord import channel
 from discord.raw_models import RawReactionActionEvent
 import yaml
 from datetime import datetime
@@ -13,7 +14,7 @@ import asyncio
 from connection import Connection
 
 
-db = Connection()
+db = Connection(dir="./database/data.db")
 
 responses = yaml.full_load(open('./response.yaml'))
 prefix = responses["default-prefix"]
@@ -76,10 +77,7 @@ class DailyBot:
         self.prefix = prefix
         self.db = db
         args = message.content.lower().strip().split()
-
-
-        
-        
+ 
         #if there is no content in the call
         if len(args) < 1 or message.author.bot or (not args[0].lower().startswith(prefix)) or (not hasattr(self, args[0][len(prefix):])):
             return
@@ -102,6 +100,13 @@ class DailyBot:
         await getattr(self, args[0][len(prefix):])(message, args)
         return
 
+    async def _LogRaw(self, error_info: str):
+        if self.isLogging and self.logChannel != None:
+            logEmbed = discord.Embed()
+            logEmbed.add_field(name="Error", value=error_info)
+            logEmbed.set_footer(text=datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+            await self.logChannel.send(embed = logEmbed)
+
     async def _Log(self, message: discord.message.Message, args):
         try:
             command_response = responses["methods"][args[0][len(prefix):]]
@@ -110,7 +115,7 @@ class DailyBot:
             pass
         if self.isLogging and self.logChannel != None:
             logEmbed = discord.Embed()
-            logEmbed.set_author(name = str(message.author.name), icon_url=message.author.avatar_url)
+            logEmbed.set_author(name = str(message.author.id), icon_url=message.author.avatar_url)
             logEmbed.add_field(name="Command", value=args[0])
             logEmbed.add_field(name="Attached Length", value= str(len(message.attachments)))
             logEmbed.set_footer(text=datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
@@ -169,14 +174,18 @@ class DailyBot:
             pass
         #add the picture?
         result = self.db.addDailyText(message.author.id, message.content[len(args[0])+1:], message.author.name)
-        try:
-            db.removeRemindList(str(message.author.id))
-            #remove from reminded list
-            #reminded.remove(str(message.author.id))
-        except:
-            pass
-
+        
+        
+        #if add successfully
         if result[0] == 1:
+            
+            #remove from reminded list
+            try:
+                db.removeRemindList(str(message.author.id))
+                #remove from reminded list
+                #reminded.remove(str(message.author.id))
+            except:
+                pass
             
             #reset streak if needed
             if reset_streak:
@@ -197,7 +206,7 @@ class DailyBot:
             if self.isLogging:
                 logEmbed = discord.Embed()
                 logEmbed.set_author(name = str(message.author.name), icon_url=message.author.avatar_url)
-                logEmbed.add_field(name="Error", value=result[1])
+                logEmbed.add_field(name="Error on addtext", value=result[1])
                 logEmbed.set_footer(text=datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
                 await self.logChannel.send(embed = logEmbed)
 
@@ -316,7 +325,51 @@ You need further support? Join our [support server](https://discord.gg/fumxgEFHk
         return
         message.content = "12345"
         await message.channel.send(message.content)
-    
+
+    async def _no_img_confirm(self, message:discord.message.Message, args):
+        def reactCheck(reaction: discord.Reaction, user):
+            '''
+            Check if reaction of a message on a normal channel is belong to that specific message.
+            This does not triggered on DM channel
+            '''
+            if not user.bot and reaction.message.id == confirm_mess.id:
+                return True
+            else:
+                return False
+
+        #create an embeded to ask if want no picture
+        embedVar = discord.Embed(color = 0xd4cab8, title = "No picture is attached!",
+            description = "Do you want to add a page with only text?")
+        embedVar.set_footer(text = "You can skip this confirmation step using dl!addtext")
+        confirm_mess = None
+        try:
+            confirm_mess = await message.channel.send(embed = embedVar)
+        except:
+            confirm_mess = await message.channel.send("You didn't attach any picture, do you want to add a page with only text?")
+
+        #try to add reaction
+        try:
+            await confirm_mess.add_reaction("✅")
+            await confirm_mess.add_reaction("❌")
+        except:
+            await message.channel.send("Cannot add emoji, add ✅ to confirm and ❌ to stop.")
+
+        while True:
+            try:
+                reaction, user = await self.client.wait_for('reaction_add',timeout=60, check= reactCheck)
+            except asyncio.TimeoutError:
+                return False
+            
+            try:
+                await confirm_mess.delete(delay = 0.7)
+            except:
+                pass
+            if str(reaction) == "✅":
+                return True
+            elif str(reaction) == "❌":
+                return False
+
+
     #add?: add an entry...
     async def add(self, message:discord.message.Message, args):
         try:
@@ -324,9 +377,20 @@ You need further support? Join our [support server](https://discord.gg/fumxgEFHk
         except:
             command_response = ""
             pass
+
         #check if there is any picture attached
+        # if not then ask for confirmation?
         if (len(message.attachments) < 1):
-            await message.channel.send(command_response["response-fail"]["no-picture"].format(prefix = self.prefix))
+            confirm = await self._no_img_confirm(message, args)
+            if confirm == False:
+                await message.channel.send("No entry is added")
+             
+            elif confirm == True:
+                #call the addtext method as if the user is calling it?
+                await self.addtext(message, args)
+                
+
+            
             return
         else:
             pass 
@@ -361,7 +425,14 @@ You need further support? Join our [support server](https://discord.gg/fumxgEFHk
     
         #check if there is any picture attached
         if (len(message.attachments) < 1):
-            await message.channel.send(command_response["response-fail"]["no-picture"].format(prefix = self.prefix))
+            confirm = await self._no_img_confirm(message, args)
+            if confirm == False:
+                await message.channel.send("No entry is added")
+                 
+            elif confirm == True:
+                #call the addtext method as if the user is calling it?
+                await self.addtextanyway(message, args)
+                
             return
         else:
             pass 
