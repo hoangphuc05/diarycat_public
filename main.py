@@ -6,6 +6,7 @@ import asyncio
 import os
 import yaml
 import importlib
+import traceback
 
 import dailyBot
 
@@ -39,6 +40,14 @@ class LocalDailyBot(discord.Client):
     # async def on_error(event, *args, **kawrgs):
     #     print(args)
 
+    # @client.event
+    # async def on_error(self, event_method, *args, **kwargs):
+    #     print(*args)
+    #     await dailyClient._LogRaw(event_method)
+    #     for i in traceback.format_stack():
+    #         print(i)
+    #         await dailyClient._LogRaw(i)
+    #     #return super().on_error(event_method, *args, **kwargs)
 
     @client.event
     async def on_message(self, message):
@@ -57,7 +66,8 @@ class LocalDailyBot(discord.Client):
             dailyClient = dailyBot.DailyBot(clients)
             await clients.change_presence(activity=discord.Game(name=responses["presence"]))
         else:
-            await dailyClient.messageHandler(message)
+            await asyncio.wait_for(dailyClient.messageHandler(message), timeout= 1600.0)
+            #await dailyClient.messageHandler(message)
 
     #@client.event
     # async def on_raw_reaction_add(self,payload):

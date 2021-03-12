@@ -105,7 +105,8 @@ class DailyBot:
             logEmbed = discord.Embed()
             logEmbed.add_field(name="Error", value=error_info)
             logEmbed.set_footer(text=datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
-            await self.logChannel.send(embed = logEmbed)
+            await self.logChannel.send(error_info)
+            #await self.logChannel.send(embed = logEmbed)
 
     async def _Log(self, message: discord.message.Message, args):
         try:
@@ -369,6 +370,88 @@ You need further support? Join our [support server](https://discord.gg/fumxgEFHk
             elif str(reaction) == "❌":
                 return False
 
+    async def _delete_img_confirm(self, message:discord.message.Message, args):
+        def reactCheck(reaction: discord.Reaction, user):
+            '''
+            Check if reaction of a message on a normal channel is belong to that specific message.
+            This does not triggered on DM channel
+            '''
+            if not user.bot and reaction.message.id == confirm_mess.id:
+                return True
+            else:
+                return False
+
+        # get the image information
+        entry = self.db.view_single_pic(message.author.id, str(args[1]))
+        if len(entry) ==0:
+            await message.channel.send("No entry found, please check your id!")
+            return False
+
+
+        #create an embeded to ask for delete confirmation
+        embedVar = discord.Embed(color = 0xd4cab8, title = "Image delete confirm",
+            description = "Please confirm you want to delete this entries")
+        embedVar.add_field(name = "Date added", value= f"{entry[0][2]}", inline=False)
+        embedVar.add_field(name = "Note", value= f"{entry[0][3]}", inline=False)
+        embedVar.set_image(url = baseEntry + entry[0][4])
+        embedVar.set_footer(text = "React ✅ to delete, ❌ to keep.")
+        confirm_mess = None
+        try:
+            confirm_mess = await message.channel.send(embed = embedVar)
+        except:
+            confirm_mess = await message.channel.send("Send message error, please check if the bot has embed message permission")
+            return False
+
+        try:
+            await confirm_mess.add_reaction("✅")
+            await confirm_mess.add_reaction("❌")
+        except:
+            pass
+        
+        while True:
+            try:
+                reaction, user = await self.client.wait_for('reaction_add',timeout=60, check= reactCheck)
+            except asyncio.TimeoutError:
+                return False
+            
+            try:
+                await confirm_mess.delete(delay = 0.7)
+            except:
+                pass
+            if str(reaction) == "✅":
+                return True
+            elif str(reaction) == "❌":
+                return False
+        
+
+
+    async def delete(self, message:discord.message.Message, args):
+        '''
+        This function will show help if no parameters is provided,
+        or delete entry of that user with the id
+        dl!delete [id]
+        '''
+        if len(args) == 2:
+            confirm = await self._delete_img_confirm(message, args)
+            if confirm == False:
+                await message.channel.send("Delete cancelled")
+                return
+            result = self.db.delete_entries(message.author.id, args[1])
+            if result == 1:
+                await message.channel.send("Entries delete successfully!\nuse `dl!read` to view your updated diary.")
+            elif result == -1:
+                await message.channel.send("No entries found, please check your post entry id again")
+            elif result == -2:
+                await message.channel.send("An error happened, please try again later.")    
+                await self._LogRaw("Delete fail, please check log!")
+        else:
+            await message.channel.send(
+                f"""
+```
+To delete an entry, navigate to that entries using `{self.prefix}read` and react the entry with ❌, then follow the instruction.
+```
+                """
+            )
 
     #add?: add an entry...
     async def add(self, message:discord.message.Message, args):
@@ -598,6 +681,9 @@ You need further support? Join our [support server](https://discord.gg/fumxgEFHk
                     index += 1
                 if str(reaction) == "⬅️":
                     index -= 1
+                if str(reaction) == "❌":
+                    await message.channel.send(f"To delete this entry, use command:\n```cpp\n{prefix}delete {entries[index][0]}```\nIf you don't want to delete this entry, just ignore this message!\n**Warning: This action is irreversible**")
+
                 if index < 0:
                     index = len(entries) -1
                 if index > len(entries) -1:
