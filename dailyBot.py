@@ -256,24 +256,25 @@ Welcome to Diary Cat! The starting purpose of this Cat is to encourage you to do
 However, this Cat has now evolved and you can use it anyway you want to!\n
 **You can now direct message the bot with these commands**\n  
 Use `{prefix}help [command]` to learn more about a specific command.
-You need further support? Join our [support server](https://discord.gg/fumxgEFHkR)
+You need further support? Join our [support server](https://discord.gg/shuJ8A3Ced)
         """.format(prefix = prefix))
             #embedVar.add_field(name = "\u200b",value="Use `{prefix}help [command]` to learn more about that specific command.\nYou need further support? Join our [support server](https://discord.gg/fumxgEFHkR)".format(prefix = prefix), inline=False)
             embedVar.add_field(inline = False,name="\n📝 **Add diary entry everyday**", value='''
 `You can only use these commands once every 18 hours`
-`{prefix}add <a note> <attach a picture>` : add an entry to your diary!
-`{prefix}addText <a note>` : add an entry with no picture.
+`{prefix}add [a note] [attach a picture]` : add an entry to your diary!
+`{prefix}addText [a note]` : add an entry with no picture.
             '''.format(prefix = prefix))
             embedVar.add_field(inline=False, name="⏲️ **Manipulate time, skip the waiting!**", value=f'''
-`{prefix}addAnyway <a note> <attach a picture>` : add an entry to your diary when you don't want to wait!
-`{prefix}addTextAnyway <a note>` : skip the 1-day cooldown and add a note with no picture.
+`{prefix}addAnyway [a note] [attach a picture]` : add an entry to your diary when you don't want to wait!
+`{prefix}addTextAnyway [a note]` : skip the 1-day cooldown and add a note with no picture.
             ''')
             embedVar.add_field(inline = False, name = "\n📖 **Read your diary**", value = f'''
 `{prefix}read` : see all of your diary entries!        
             ''')
             embedVar.add_field(inline= False, name="⚙️ **Setting and misc**", value=f'''
 `{prefix}feedback` : send an anonymous feedback to the owner.
-`{prefix}remindOn` : `{prefix}remindOff` to turn on or off the reminder.
+`{prefix}remindOn` - `{prefix}remindOff` : turn on or off the reminder, default is on.
+`{prefix}invite` : get the link to invite this bot to different server.
 `{prefix}help [name of the command]` : get specific help about that command.
 `{prefix}viewAnnouncement` : see the newest announcement.        
             ''')
@@ -713,6 +714,12 @@ To delete an entry, navigate to that entries using `{self.prefix}read` and react
         else:
             await message.channel.send(self.annContent)
     
+    async def invite(self, message:discord.message.Message, args):
+        """
+        output invite link for the bot
+        """
+        await message.channel.send("You can invite this bot to your server using this link: https://discord.com/oauth2/authorize?client_id=739410070533570582&scope=bot&permissions=388160")
+
     async def feedback(self, message:discord.message.Message, args):
         try:
             command_response = responses["methods"][args[0][len(prefix):]]
@@ -724,6 +731,8 @@ To delete an entry, navigate to that entries using `{self.prefix}read` and react
         '''
         if self.logChannel != None:
             await self.logChannel.send(message.content)
+        embedVar = discord.Embed(color = 0xd4cab8, title = "Feedback received", description = f"Thank you for your feedback! If you want to receive further support, feel free to join the [support server](https://discord.gg/shuJ8A3Ced).")
+        await message.channel.send(embed = embedVar)
 
     #-----------------------------------------------
     #This section is limited to admin user...

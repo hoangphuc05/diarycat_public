@@ -74,6 +74,14 @@ methods:
     response-fail:
       no-entry: "No entry found, please add a new entry using `dl!add`. Use `dl!help` to learn more."
 
+  delete:
+    structure: "[id]"
+    description: "Delete an entry with your provided id. Use {prefix}delete to learn more."
+    responnse-success: "You entry has been deleted. Use {prefix}read again to view your updated diary"
+    reponse-fail:
+      no-entry-fail: "No entry found with provided id, please try again"
+      error-fail: "An error happened, please try again later."
+
   viewannouncement:
     structure: ""
     description: "View the newest announcement of the bot"
