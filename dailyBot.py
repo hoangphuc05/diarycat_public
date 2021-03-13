@@ -269,7 +269,8 @@ You need further support? Join our [support server](https://discord.gg/shuJ8A3Ce
 `{prefix}addTextAnyway [a note]` : skip the 1-day cooldown and add a note with no picture.
             ''')
             embedVar.add_field(inline = False, name = "\n📖 **Read your diary**", value = f'''
-`{prefix}read` : see all of your diary entries!        
+`{prefix}read` : see all of your diary entries!
+`{prefix}delete` : show instruction to delete an entry.        
             ''')
             embedVar.add_field(inline= False, name="⚙️ **Setting and misc**", value=f'''
 `{prefix}feedback` : send an anonymous feedback to the owner.
