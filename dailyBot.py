@@ -9,6 +9,7 @@ from time import time
 import os
 from dotenv import load_dotenv
 import asyncio
+import random
 
 #connection to the database
 from connection import Connection
@@ -48,8 +49,14 @@ class DailyBot:
             if allReminded == -1:
                 print("All reminded Error")
                 return 
+
+            # get the list of questions:
+            questions_list = responses["methods"]["remind"]["message"]
             
             for user in allUser:
+                # generate a random question
+                question = random.choice(questions_list)
+
                 if (not (str(user[0]),) in allReminded) and int(time()) - int(user[1]) > 86400:
                     await asyncio.sleep(3)
                     try:
@@ -59,7 +66,7 @@ class DailyBot:
                         pass
                     if channel != None:
                         try:
-                            await channel.send(responses["methods"]["remind"]["message"].format(user_id=user[0]))
+                            await channel.send(question.format(user_id=user[0]))
                             db.addRemindList(str(user[0]))
                             print(f'{user[0]} was tagged!')
                             if self.logChannel != None:
@@ -252,15 +259,14 @@ class DailyBot:
             helpCommand = args[1]
         if helpCommand == None:
             embedVar = discord.Embed(color = 0xd4cab8, title = "**Diary Cat Command List**", description = """
-Welcome to Diary Cat! The starting purpose of this Cat is to encourage you to do something everyday, take a picture and upload it for your furture self to look at.
-However, this Cat has now evolved and you can use it anyway you want to!\n
-**You can now direct message the bot with these commands**\n  
+Welcome to Diary Cat!\n You can get start by using `{prefix}add [you diary entry]` and then `{prefix}read` to read your diary.\n
+**You can now direct message the bot with these commands for privacy**\n  
 Use `{prefix}help [command]` to learn more about a specific command.
 You need further support? Join our [support server](https://discord.gg/shuJ8A3Ced)
         """.format(prefix = prefix))
             #embedVar.add_field(name = "\u200b",value="Use `{prefix}help [command]` to learn more about that specific command.\nYou need further support? Join our [support server](https://discord.gg/fumxgEFHkR)".format(prefix = prefix), inline=False)
             embedVar.add_field(inline = False,name="\n📝 **Add diary entry everyday**", value='''
-`You can only use these commands once every 18 hours`
+You can only use these commands once every 18 hours
 `{prefix}add [a note] [attach a picture]` : add an entry to your diary!
 `{prefix}addText [a note]` : add an entry with no picture.
             '''.format(prefix = prefix))
@@ -329,26 +335,28 @@ You need further support? Join our [support server](https://discord.gg/shuJ8A3Ce
         message.content = "12345"
         await message.channel.send(message.content)
 
-    async def _no_img_confirm(self, message:discord.message.Message, args):
+    async def __pop_up_confirm(self, message:discord.message.Message, args, title = "confirm", content = "Are you sure about this?", footer="React ✅ to confirm, ❌ to cancel"):
         def reactCheck(reaction: discord.Reaction, user):
             '''
             Check if reaction of a message on a normal channel is belong to that specific message.
-            This does not triggered on DM channel
+            This does not triggered on DM channel?? What?? 
+            Update: only return true if from the original user
             '''
-            if not user.bot and reaction.message.id == confirm_mess.id:
+            # get the 
+            if not user.bot and reaction.message.id == confirm_mess.id and user.id == message.author.id:
                 return True
             else:
                 return False
 
         #create an embeded to ask if want no picture
-        embedVar = discord.Embed(color = 0xd4cab8, title = "No picture is attached!",
-            description = "Do you want to add a page with only text?")
-        embedVar.set_footer(text = "You can skip this confirmation step using dl!addtext")
+        embedVar = discord.Embed(color = 0xd4cab8, title = title,
+            description = content)
+        embedVar.set_footer(text = footer)
         confirm_mess = None
         try:
             confirm_mess = await message.channel.send(embed = embedVar)
         except:
-            confirm_mess = await message.channel.send("You didn't attach any picture, do you want to add a page with only text?")
+            confirm_mess = await message.channel.send("Can't send embed. please check my permission! Are you sure about your action?")
 
         #try to add reaction
         try:
@@ -372,7 +380,11 @@ You need further support? Join our [support server](https://discord.gg/shuJ8A3Ce
             elif str(reaction) == "❌":
                 return False
 
-    async def _delete_img_confirm(self, message:discord.message.Message, args):
+    async def __no_img_confirm(self, message:discord.message.Message, args):
+        return await self.__pop_up_confirm(message, args, title = "No picture is attached!", content = "Do you want to add a page with only text?", footer= "You can skip this confirmation step using dl!addtext next time")
+
+
+    async def __delete_img_confirm(self, message:discord.message.Message, args):
         def reactCheck(reaction: discord.Reaction, user):
             '''
             Check if reaction of a message on a normal channel is belong to that specific message.
@@ -425,7 +437,8 @@ You need further support? Join our [support server](https://discord.gg/shuJ8A3Ce
             elif str(reaction) == "❌":
                 return False
         
-
+    async def __same_day_confirm(self,  message:discord.message.Message, args):
+        return await self.__pop_up_confirm(message, args, title = "You already write an entry today!", content = "Are you sure you want to add another page of diary entry?", footer="You can skip this confirmation by using dl!addAnyway/addTextAnyway next time")
 
     async def delete(self, message:discord.message.Message, args):
         '''
@@ -466,7 +479,7 @@ To delete an entry, navigate to that entries using `{self.prefix}read` and react
         #check if there is any picture attached
         # if not then ask for confirmation?
         if (len(message.attachments) < 1):
-            confirm = await self._no_img_confirm(message, args)
+            confirm = await self.__no_img_confirm(message, args)
             if confirm == False:
                 await message.channel.send("No entry is added")
              
@@ -491,12 +504,17 @@ To delete an entry, navigate to that entries using `{self.prefix}read` and react
         if int(time()) - int(lastTime) > 172800:
             await self._addPicture(message, True, args)
         
-        #deny entry if under 18 hours
+        # ask for confirm to add entry if under 18 hours
         elif int(time()) - int(lastTime) < 64800:
-            waitTime = 64800 -  (int(time()) - int(lastTime))
-            await message.channel.send(command_response["response-fail"]["time-fail"].format(hour= int(waitTime/3600), min = int((waitTime - (int(waitTime/3600))*3600)/60), prefix = self.prefix ))
+            # ask for confirmation if they want to add another entry in a same day
+            confirm = await self.__same_day_confirm(message, args)
+            if confirm == False:
+                await message.channel.send("No entry is added")
+            elif confirm == True:
+                # call the addtext method as if the user is calling it?
+                await self.addanyway(message, args)
 
-        #else except entry
+        # else except entry
         else:
             await self._addPicture(message, False, args)
         return
@@ -510,7 +528,7 @@ To delete an entry, navigate to that entries using `{self.prefix}read` and react
     
         #check if there is any picture attached
         if (len(message.attachments) < 1):
-            confirm = await self._no_img_confirm(message, args)
+            confirm = await self.__no_img_confirm(message, args)
             if confirm == False:
                 await message.channel.send("No entry is added")
                  
@@ -549,7 +567,14 @@ To delete an entry, navigate to that entries using `{self.prefix}read` and react
         except:
             command_response = ""
             pass
-        #check if there is text
+
+        # check if there's an attachment come with the message
+        if (len(message.attachments) > 0):
+            await message.channel.send(command_response["response-fail"]["image-fail"].format(prefix = prefix))
+            await self.add(message, args)
+            return
+    
+        # check if there is text
         if len(args) < 2:
             await message.channel.send(command_response["response-fail"]["no-text"])
             return        
@@ -564,9 +589,19 @@ To delete an entry, navigate to that entries using `{self.prefix}read` and react
         if int(time()) - int(lastTime) > 172800:
             await self._addTextMethod(message, True, args)
             return
+
+        # if time under 18 hours, ask confirm to add entry
         elif int(time()) - int(lastTime) < 64800:
-            waitTime = 64800 -  (int(time()) - int(lastTime))
-            await message.channel.send(command_response["response-fail"]["time-fail"].format(hour= int(waitTime/3600), min = int((waitTime - (int(waitTime/3600))*3600)/60), prefix = self.prefix ))
+            # waitTime = 64800 -  (int(time()) - int(lastTime))
+            # await message.channel.send(command_response["response-fail"]["time-fail"].format(hour= int(waitTime/3600), min = int((waitTime - (int(waitTime/3600))*3600)/60), prefix = self.prefix ))
+            # ask for confirmation if they want to add another entry in a same day
+            confirm = await self.__same_day_confirm(message, args)
+            if confirm == False:
+                await message.channel.send("No entry is added")
+            elif confirm == True:
+                # call the addtext method as if the user is calling it?
+                await self.addtextanyway(message, args)
+
         else:
            await self._addTextMethod(message, False, args)
 
@@ -576,6 +611,13 @@ To delete an entry, navigate to that entries using `{self.prefix}read` and react
         except:
             command_response = ""
             pass
+
+        # check if there's an attachment, if does call another function
+        if (len(message.attachments) > 0):
+            await message.channel.send(command_response["response-fail"]["image-fail"].format(prefix = prefix))
+            await self.addanyway(message, args)
+            return
+
         #check if there is text
         if len(args) < 2:
             await message.channel.send(command_response["response-fail"]["no-text"])

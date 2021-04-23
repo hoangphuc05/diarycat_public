@@ -3,3 +3,4 @@
 /.vscode
 /database
 *.log
+upgrade.py
