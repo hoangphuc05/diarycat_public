@@ -27,7 +27,7 @@ responses = yaml.full_load(open('./response.yaml'))
 dailyClient = dailyBot.DailyBot(client)
 
 class LocalDailyBot(discord.Client):
-    @tasks.loop(seconds=10)
+    @tasks.loop(seconds=40)
     async def checkDaily(self):
         await dailyClient.loopUpdate()
 

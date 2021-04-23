@@ -5,7 +5,12 @@ presence: "dl!help"
 methods:
 
   remind:
-    message: "How was your day, <@{user_id}>?"
+    message: 
+      - "How was your day, <@{user_id}>?"
+      - "How are you doing <@{user_id}>?"
+      - "Did you take any picture today <@{user_id}>?"
+      - "How are you feeling today <@{user_id}>?"
+      - "What did you listen to today <@{user_id}>?"
 
   help:
     structure: "<Name of method, default = None>"
@@ -52,6 +57,7 @@ methods:
     description: "Add a daily entry without a picture to your diary with a 24-hour cooldown"
     response-success: "Your current streak is {streak_length} days!"
     response-fail:
+      image-fail: "Looks like you attached an image, you should use `{prefix}add` next time!"
       upload-fail: "Upload failed, please try again later or with a different picture."
       time-fail: "Please wait for another {hour} hours {min} mins!!\nYou can skip the wait time with `{prefix}addTextAnyway`"
       no-picture: "Please attach a picture, you can add only text using `{prefix}addText`"
