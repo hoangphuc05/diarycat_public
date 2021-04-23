@@ -690,7 +690,7 @@ To delete an entry, navigate to that entries using `{self.prefix}read` and react
             Check if reaction of a message on a normal channel is belong to that specific message.
             This does not triggered on DM channel
             '''
-            if not user.bot and reaction.message.id == msg.id:
+            if not user.bot and reaction.message.id == msg.id and user.id == message.author.id:
                 return True
             else:
                 return False
