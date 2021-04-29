@@ -98,7 +98,7 @@ dailyClient = dailyBot.DailyBot(clients)
 slash = SlashCommand(clients, sync_commands=True) # Declares slash commands through the client.
 guilds_id = [653133437087121419]
 
-@slash.slash(guild_ids=guilds_id, name="addText", description= "Add a text entry to your diary",
+@slash.slash(name="addText", description= "Add a text entry to your diary",
                 options=[
                     create_option(
                         name = "content",
@@ -118,7 +118,7 @@ async def add_text(ctx, content: str): # Defines a new "context" (ctx) command c
     #print(ctx.message)
 
 
-@slash.slash(guild_ids=guilds_id, name= "help", description="Display help windows",
+@slash.slash(name= "help", description="Display help windows",
                 options=[
                     create_option(
                         name = "command",
@@ -134,14 +134,14 @@ async def help(ctx, command = ""):
     await dailyClient.messageHandler(user_message)
 
 
-@slash.slash(guild_ids=guilds_id, name= "read", description="Read your diary")
+@slash.slash(name= "read", description="Read your diary")
 async def read(ctx):
     tradition_content = "dl!read"
     user_message = Manual_message(ctx.author, clients.get_channel(int(ctx.channel_id)), tradition_content)
     await ctx.send("Your diary:")
     await dailyClient.messageHandler(user_message)
 
-@slash.slash(guild_ids=guilds_id, name= "delete", description="Delete an entry from your diary",
+@slash.slash(name= "delete", description="Delete an entry from your diary",
                 options=[
                     create_option(
                         name="id",
@@ -157,7 +157,7 @@ async def delete(ctx, id=""):
     await dailyClient.messageHandler(user_message)
 
 
-@slash.slash(guild_ids=guilds_id, name= "remind", description="Turn daily reminder on or off",
+@slash.slash(name= "remind", description="Turn daily reminder on or off",
                 options=[
                     create_option(
                         name="switch",
@@ -183,7 +183,7 @@ async def remind_switch(ctx, switch="on"):
     await dailyClient.messageHandler(user_message)
 
 
-@slash.slash(guild_ids=guilds_id, name= "invite", description="Get invite link of the bot")
+@slash.slash(name= "invite", description="Get invite link of the bot")
 async def read(ctx):
     tradition_content = "dl!invite"
     user_message = Manual_message(ctx.author, clients.get_channel(int(ctx.channel_id)), tradition_content)
