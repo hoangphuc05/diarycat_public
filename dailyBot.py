@@ -73,6 +73,7 @@ class DailyBot:
                                 await self.logChannel.send(f"`{user[0]} reminded.`")
                         
                         except Exception as e:
+                            # print(e)
                             pass
         except Exception as e:
             print(f"Loop error: {e}")
@@ -447,7 +448,7 @@ You can only use these commands once every 18 hours
         dl!delete [id]
         '''
         if len(args) == 2:
-            confirm = await self._delete_img_confirm(message, args)
+            confirm = await self.__delete_img_confirm(message, args)
             if confirm == False:
                 await message.channel.send("Delete cancelled")
                 return
