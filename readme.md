@@ -6,7 +6,7 @@ A Discord bot that acts as a **digital diary**, let you write and upload picture
 ## In this readme
 * [Features](#Features)
 * [Invite link](#Bot-page-and-invite-link)
-* [Selfhost](#Self--host,setting-up,modification)
+* [Selfhost](#Self--hostsetting-upmodification)
 * [Technical note](#Technical-note)
 
 ## Features
@@ -19,7 +19,7 @@ A Discord bot that acts as a **digital diary**, let you write and upload picture
 ## Bot page and invite link
 - Top.gg: https://top.gg/bot/739410070533570582
 
-## Self-host,setting up,modification
+## Self-host/setting up/modification
 - A token can be specified by adding a file `.env` and add `DISCORD_TOKEN=[your_token]`
 - Reponse and help message can be edit in [response.yaml](response.yaml)
 - This bot need a backend to receive and save pictures uploaded by user. API interaction can be seen at [connection.py](connection.py#L239)
